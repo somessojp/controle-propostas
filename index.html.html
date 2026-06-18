@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Propostas</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<style>
+*{box-sizing:border-box} body{font-family:Arial;margin:0;background:#f4f4f4;color:#000}.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:#1f2937;color:#fff;padding:20px;overflow:auto}.sidebar h3{margin-top:15px}.sidebar button{display:block;width:100%;margin:8px 0;padding:11px;background:#1976d2;color:#fff;border:0;border-radius:6px;cursor:pointer}.main{margin-left:240px;padding:25px}.box{background:#fff;padding:20px;border-radius:10px;margin-bottom:18px;overflow:auto}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}input,select,button{padding:9px;font-size:14px}button{background:#1976d2;color:#fff;border:0;border-radius:6px;cursor:pointer}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #ccc;padding:8px;text-align:center;font-size:12px}th{background:#1976d2;color:#fff}.pendente{background:#fff3b0}.sim{background:#b6f0c2}.nao{background:#ffb3b3}.cards{display:flex;gap:15px;flex-wrap:wrap}.card{padding:15px;border-radius:8px;min-width:220px;background:#e3f2fd}.verde{background:#c8e6c9}.laranja{background:#ffe0b2}a{color:#1976d2;font-weight:bold;text-decoration:none}.acoes button{margin:2px;padding:7px 10px}.topo{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}@media(max-width:800px){.sidebar{position:relative;width:100%;height:auto}.main{margin-left:0;padding:10px}}
+</style>
+</head>
+<body>
+<div class="sidebar">
+ <h3>Controle V5 Online</h3>
+ <button onclick="mostrarTela('dashboard')">Dashboard</button>
+ <button onclick="mostrarTela('propostas')">Propostas</button>
+ <button onclick="mostrarTela('fechadas')">Propostas Fechadas</button>
+ <button onclick="mostrarTela('naoFechadas')">Propostas Não Fechadas</button>
+ <button onclick="mostrarTela('empresas')">Empresas</button>
+</div>
+<div class="main">
+ <section id="loginBox" class="box">
+  <h2>Login</h2>
+  <p>Digite o e-mail cadastrado na aba Usuarios.</p>
+  <div class="grid">
+   <input id="emailLogin" type="email" placeholder="Seu e-mail">
+   <button type="button" onclick="fazerLogin()">Entrar</button>
+  </div>
+  <p id="msgLogin"></p>
+ </section>
+ <div id="appBox" style="display:none">
+ <div class="topo">
+  <button onclick="mostrarTela('propostas')">Propostas</button>
+  <button onclick="mostrarTela('fechadas')">Propostas Fechadas</button>
+  <button onclick="mostrarTela('naoFechadas')">Propostas Não Fechadas</button>
+  <button onclick="mostrarTela('empresas')">Empresas</button>
+ </div>
+
+ <section id="dashboard" class="tela" style="display:none">
+  <div class="box"><h2>Dashboard</h2><div class="cards">
+   <div class="card"><b>Total Enviado</b><br><span id="dashTotal">R$ 0,00</span></div>
+   <div class="card verde"><b>Total Fechado</b><br><span id="dashFechado">R$ 0,00</span></div>
+   <div class="card laranja"><b>Conversão</b><br><span id="dashConv">0%</span></div>
+  </div></div>
+ </section>
+
+ <section id="propostas" class="tela">
+  <div class="box"><h2>PROPOSTAS</h2>
+   <h3>Cadastro de Empresas</h3>
+   <div class="grid">
+    <input id="empresaCnpj" placeholder="CNPJ">
+    <input id="empresaNome" placeholder="Empresa">
+    <input id="empresaContato" placeholder="Contato">
+    <input id="empresaTelefone" placeholder="Telefone">
+    <input id="empresaEmail" placeholder="E-mail">
+    <button type="button" onclick="salvarEmpresa()">Salvar Empresa</button>
+   </div>
+   <hr>
+   <div class="grid">
+    <select id="statusProposta"><option value="Enviada">Enviada</option><option>Negociação</option><option>Fechada</option><option>Perdida</option></select>
+    <input id="responsavel" placeholder="Responsável">
+    <input id="cnpj" placeholder="CNPJ">
+    <input id="empresa" placeholder="Empresa" list="listaEmpresas">
+    <input id="contato" placeholder="Contato">
+    <input id="telefone" placeholder="Telefone">
+    <input id="email" placeholder="E-mail">
+    <input id="valor" placeholder="Valor">
+    <input id="descricao" placeholder="Descrição">
+    <input id="data" type="date">
+    <input id="anexo" type="file" multiple>
+    <input id="dataFechamento" type="date" title="Data de Fechamento">
+   </div>
+   <br><button id="btnAdicionar" onclick="adicionarProposta()">Adicionar</button>
+  </div>
+  <div class="box"><input id="filtro" placeholder="Pesquisar palavras-chave..." style="width:40%"> <button onclick="exportarExcel()">Exportar Excel</button> <input type="month" id="mesPdf"> <button onclick="gerarPDFMensal()">Gerar PDF Mensal</button></div>
+  <div class="box"><h3>Propostas em Aberto</h3><p>Ao clicar em <b>Sim</b>, vai para Propostas Fechadas. Ao clicar em <b>Não</b>, vai para Propostas Não Fechadas.</p><table><thead id="headPrincipal"></thead><tbody id="tb"></tbody></table></div>
+  <div class="box"><div class="cards">
+   <div class="card"><b>Total Geral das Propostas Enviadas</b><br><span id="totalGeral">R$ 0,00</span><hr><b>Quantidade de Propostas Enviadas</b><br><span id="totalEnviadas">0</span></div>
+   <div class="card verde"><b>Total Geral das Propostas Fechadas</b><br><span id="valorFechado">R$ 0,00</span><hr><b>Quantidade de Propostas Fechadas</b><br><span id="totalFechado">0</span></div>
+   <div class="card laranja"><b>Total Geral das Não Fechadas</b><br><span id="valorNaoFechado">R$ 0,00</span><hr><b>Taxa de Conversão</b><br><span id="percentualConversao">0%</span></div>
+  </div></div>
+ </section>
+
+ <section id="fechadas" class="tela" style="display:none"><div class="box"><h2>Propostas Fechadas</h2><table><thead id="headFechadas"></thead><tbody id="tbFechadas"></tbody></table></div></section>
+ <section id="naoFechadas" class="tela" style="display:none"><div class="box"><h2>Propostas Não Fechadas</h2><table><thead id="headNaoFechadas"></thead><tbody id="tbNaoFechadas"></tbody></table></div></section>
+ <section id="empresas" class="tela" style="display:none"><div class="box"><h2>Empresas</h2><input id="pesquisaEmpresa" placeholder="Pesquisar empresa"><table><thead><tr><th>CNPJ</th><th>Empresa</th><th>Contato</th><th>Telefone</th><th>E-mail</th><th>Ações</th></tr></thead><tbody id="tbEmpresas"></tbody></table></div></section>
+</div>
+<datalist id="listaEmpresas"></datalist>
+</div>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxnA_D3tmCOfdo3XMFVUszsOnUl88PSUFi4JYiTX0dnFM0xkFJBJaioMWGA_BZ155SG9g/exec';
+let itens = [];
+let empresas = [];
+let usuarioLogado = null;
+let editandoId = null;
+
+async function api(acao, dados={}){
+  const resp = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({acao, ...dados})
+  });
+  const txt = await resp.text();
+  try { return JSON.parse(txt); } catch(e) { console.error(txt); throw new Error('Resposta inválida da API'); }
+}
+
+async function fazerLogin(){
+  const email = emailLogin.value.trim().toLowerCase();
+  if(!email){ alert('Digite seu e-mail.'); return; }
+  msgLogin.textContent='Verificando acesso...';
+  try{
+    const r = await api('login', {email});
+    if(!r.ok){ msgLogin.textContent=r.erro||'Acesso negado'; return; }
+    usuarioLogado = r.usuario;
+    localStorage.setItem('usuario_propostas_email', email);
+    loginBox.style.display='none'; appBox.style.display='block';
+    await carregarDados();
+    mostrarTela('propostas');
+  }catch(e){ msgLogin.textContent='Erro ao conectar com a API: '+e.message; }
+}
+
+async function carregarDados(){
+  const r = await api('listar');
+  if(!r.ok){ alert('Erro ao carregar dados.'); return; }
+  itens = (r.propostas||[]).map(sheetToProposta);
+  empresas = (r.empresas||[]).map(sheetToEmpresa);
+  render();
+}
+
+function sheetToProposta(p){
+  return {
+    id:p.ID||'', status:p.Status||'', responsavel:p['Responsável']||'', cnpj:p.CNPJ||'', empresa:p.Empresa||'', contato:p.Contato||'', telefone:p.Telefone||'', email:p['E-mail']||'', valor:p.Valor||0, descricao:p['Descrição']||'', data:normalizarData(p['Data Envio']), anexo:p['Link Anexo']||'', anexoNome:p['Nome Anexo']||'', dataFechamento:normalizarData(p['Data Fechamento']), fechado:p.Fechado||''
+  };
+}
+function sheetToEmpresa(e){ return {cnpj:e.CNPJ||'', nome:e.Empresa||'', contato:e.Contato||'', telefone:e.Telefone||'', email:e['E-mail']||''}; }
+function normalizarData(v){ if(!v)return ''; if(typeof v==='string' && /^\d{4}-\d{2}-\d{2}/.test(v))return v.slice(0,10); let d=new Date(v); if(!isNaN(d))return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; return String(v); }
+function mostrarTela(id){document.querySelectorAll('.tela').forEach(t=>t.style.display='none');document.getElementById(id).style.display='block';render();}
+function moeda(n){return Number(parseMoeda(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});} 
+function parseMoeda(v){ if(typeof v==='number')return v; let s=String(v||'').replace(/[^0-9,.-]/g,''); if(s.includes(',')) s=s.replace(/\./g,'').replace(',','.'); return Number(s)||0; }
+function maskCNPJ(v){return String(v||'').replace(/\D/g,'').replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d)/,'$1-$2').slice(0,18)}
+function formatarData(d){if(!d)return '-';let p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d}
+function hojeISO(){let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function status(p){return p.fechado==='Sim'?'Sim':(p.fechado==='Não'||p.fechado==='Nao'?'Não':'')}
+function cabecalho(){return '<tr><th>Responsável</th><th>Contato</th><th>Telefone</th><th>E-mail</th><th>CNPJ</th><th>Empresa</th><th>Valor</th><th>Descrição</th><th>Data Envio</th><th>Anexo</th><th>Data Fechamento</th><th>Fechado</th><th>Ação</th></tr>'}
+function linha(p,idx){let v=parseMoeda(p.valor);let st=status(p);let cls=st==='Sim'?'sim':st==='Não'?'nao':'pendente';let an=p.anexo?`<a href="${p.anexo}" target="_blank">📎 ${p.anexoNome||'Anexo'}</a>`:'-';return `<tr class="${cls}"><td>${p.responsavel||''}</td><td>${p.contato||''}</td><td>${p.telefone||''}</td><td>${p.email||''}</td><td>${p.cnpj||''}</td><td>${p.empresa||''}</td><td>${moeda(v)}</td><td>${p.descricao||''}</td><td>${formatarData(p.data)}</td><td>${an}</td><td>${formatarData(p.dataFechamento)}</td><td class="acoes"><button onclick="setFechado(${idx},'Sim')">Sim</button><button onclick="setFechado(${idx},'Não')">Não</button></td><td class="acoes"><button onclick="editar(${idx})">Editar</button><button onclick="excluir(${idx})">Excluir</button></td></tr>`}
+function render(){
+ ['headPrincipal','headFechadas','headNaoFechadas'].forEach(id=>{let e=document.getElementById(id);if(e)e.innerHTML=cabecalho()});
+ let termo=(document.getElementById('filtro')?.value||'').toLowerCase();
+ tb.innerHTML=''; tbFechadas.innerHTML=''; tbNaoFechadas.innerHTML='';
+ let visiveis = itens;
+ if(usuarioLogado && String(usuarioLogado.perfil).toUpperCase()!=='ADM') visiveis = itens.filter(p=>String(p.responsavel||'').toLowerCase()===String(usuarioLogado.nome||'').toLowerCase() || String(p.email||'').toLowerCase()===String(usuarioLogado.email||'').toLowerCase());
+ let total=0, fechado=0, nao=0, qtdFech=0;
+ visiveis.forEach((p)=>{let v=parseMoeda(p.valor); total+=v; let st=status(p); if(st==='Sim'){fechado+=v;qtdFech++} if(st==='Não')nao+=v;});
+ visiveis.forEach((p)=>{let idx=itens.findIndex(x=>x.id===p.id); let texto=Object.values(p).join(' ').toLowerCase(); if(termo&&!texto.includes(termo))return; let st=status(p); if(st==='Sim') tbFechadas.innerHTML+=linha(p,idx); else if(st==='Não') tbNaoFechadas.innerHTML+=linha(p,idx); else tb.innerHTML+=linha(p,idx);});
+ totalGeral.textContent=moeda(total); valorFechado.textContent=moeda(fechado); valorNaoFechado.textContent=moeda(nao); totalEnviadas.textContent=visiveis.length; totalFechado.textContent=qtdFech; percentualConversao.textContent=visiveis.length?((qtdFech/visiveis.length)*100).toFixed(1)+'%':'0%'; dashTotal.textContent=moeda(total); dashFechado.textContent=moeda(fechado); dashConv.textContent=percentualConversao.textContent; renderEmpresas(); }
+async function setFechado(idx,resposta){ if(!itens[idx])return; itens[idx].fechado=resposta; if(resposta==='Sim'&&!itens[idx].dataFechamento) itens[idx].dataFechamento=hojeISO(); if(resposta==='Não') itens[idx].dataFechamento=''; await salvarPropostaServidor(itens[idx]); await carregarDados(); mostrarTela(resposta==='Sim'?'fechadas':'naoFechadas'); }
+function fileToBase64(file){ return new Promise((resolve,reject)=>{ if(!file) return resolve(''); let r=new FileReader(); r.onload=e=>resolve(e.target.result); r.onerror=reject; r.readAsDataURL(file); }); }
+async function adicionarProposta(){let file=anexo.files[0]; let obj={id:editandoId||'',status:statusProposta.value,responsavel:responsavel.value.trim(),cnpj:cnpj.value.trim(),empresa:empresa.value.trim(),contato:contato.value.trim(),telefone:telefone.value.trim(),email:email.value.trim(),valor:parseMoeda(valor.value),descricao:descricao.value.trim(),data:data.value,anexo:'',anexoNome:file?file.name:'',dataFechamento:dataFechamento.value,fechado:''}; for(let k of ['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data']){if(!obj[k]){alert('Preencha todos os campos da proposta.');return}} btnAdicionar.disabled=true; btnAdicionar.textContent='Salvando...'; try{ const base64=await fileToBase64(file); await salvarPropostaServidor(obj,base64); editandoId=null; limparProposta(); await carregarDados(); alert('Proposta salva com sucesso.'); }catch(e){alert('Erro ao salvar: '+e.message)} finally{btnAdicionar.disabled=false; btnAdicionar.textContent='Adicionar';} }
+async function salvarPropostaServidor(p,base64=''){ return api('salvarProposta',{id:p.id,status:p.status,responsavel:p.responsavel,cnpj:p.cnpj,empresa:p.empresa,contato:p.contato,telefone:p.telefone,email:p.email,valor:p.valor,descricao:p.descricao,dataEnvio:p.data,anexoBase64:base64,nomeAnexo:p.anexoNome,linkAnexo:p.anexo,dataFechamento:p.dataFechamento,fechado:p.fechado}); }
+function limparProposta(){['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data','dataFechamento','anexo'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''})}
+function editar(idx){let p=itens[idx]; if(!p)return; editandoId=p.id; responsavel.value=p.responsavel||''; cnpj.value=p.cnpj||''; empresa.value=p.empresa||''; contato.value=p.contato||''; telefone.value=p.telefone||''; email.value=p.email||''; valor.value=moeda(parseMoeda(p.valor)); descricao.value=p.descricao||''; data.value=p.data||''; dataFechamento.value=p.dataFechamento||''; btnAdicionar.textContent='Salvar Alteração'; mostrarTela('propostas');}
+async function excluir(idx){if(confirm('Deseja excluir?')){ await api('excluirProposta',{id:itens[idx].id}); await carregarDados(); }}
+async function salvarEmpresa(){let c=maskCNPJ(empresaCnpj.value); if(!c){alert('Informe o CNPJ');return} let emp={cnpj:c,empresa:empresaNome.value.trim(),contato:empresaContato.value.trim(),telefone:empresaTelefone.value.trim(),email:empresaEmail.value.trim()}; if(!emp.empresa){alert('Informe o nome da empresa');return} await api('salvarEmpresa',emp); ['empresaCnpj','empresaNome','empresaContato','empresaTelefone','empresaEmail'].forEach(id=>document.getElementById(id).value=''); await carregarDados(); alert('Empresa cadastrada');}
+function renderEmpresas(){let tb=document.getElementById('tbEmpresas'); if(!tb)return; let termo=(pesquisaEmpresa?.value||'').toLowerCase(); tb.innerHTML=''; listaEmpresas.innerHTML=''; empresas.forEach((e,i)=>{listaEmpresas.innerHTML+=`<option value="${e.nome}">`; let texto=Object.values(e).join(' ').toLowerCase(); if(termo&&!texto.includes(termo))return; tb.innerHTML+=`<tr><td>${e.cnpj||''}</td><td>${e.nome||''}</td><td>${e.contato||''}</td><td>${e.telefone||''}</td><td>${e.email||''}</td><td><button onclick="editarEmpresa(${i})">Editar</button> <button onclick="excluirEmpresa(${i})">Excluir</button></td></tr>`})}
+function editarEmpresa(i){let e=empresas[i]; empresaCnpj.value=e.cnpj;empresaNome.value=e.nome;empresaContato.value=e.contato;empresaTelefone.value=e.telefone;empresaEmail.value=e.email;mostrarTela('propostas')}
+async function excluirEmpresa(i){if(confirm('Deseja excluir empresa?')){await api('excluirEmpresa',{cnpj:empresas[i].cnpj}); await carregarDados();}}
+function preencherEmpresaPorCNPJ(){let c=maskCNPJ(cnpj.value);cnpj.value=c;let e=empresas.find(x=>x.cnpj===c); if(e){empresa.value=e.nome||'';contato.value=e.contato||'';telefone.value=e.telefone||'';email.value=e.email||''}}
+function preencherEmpresaPorNome(){let e=empresas.find(x=>x.nome===empresa.value); if(e){cnpj.value=e.cnpj||'';contato.value=e.contato||'';telefone.value=e.telefone||'';email.value=e.email||''}}
+function exportarExcel(){let dados=itens.map(p=>({Responsavel:p.responsavel,Contato:p.contato,Telefone:p.telefone,Email:p.email,CNPJ:p.cnpj,Empresa:p.empresa,Valor:moeda(parseMoeda(p.valor)),Descricao:p.descricao,Data:formatarData(p.data),Anexo:p.anexoNome||'-',DataFechamento:formatarData(p.dataFechamento),Fechado:status(p)||'Aberta'}));let ws=XLSX.utils.json_to_sheet(dados);let wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Propostas');XLSX.writeFile(wb,'propostas.xlsx')}
+function gerarPDFMensal(){let mes=mesPdf.value;if(!mes){alert('Selecione um mês.');return}let filtrados=itens.filter(p=>(p.data||'').startsWith(mes));if(!filtrados.length){alert('Nenhum registro encontrado para este mês.');return}const{jsPDF}=window.jspdf;let doc=new jsPDF({orientation:'landscape'});doc.text('Relatório Mensal de Propostas',14,15);doc.autoTable({startY:25,head:[['Responsável','Contato','Telefone','E-mail','CNPJ','Empresa','Valor','Descrição','Data','Anexo','Data Fechamento','Fechado']],body:filtrados.map(p=>[p.responsavel,p.contato,p.telefone,p.email,p.cnpj,p.empresa,moeda(parseMoeda(p.valor)),p.descricao,formatarData(p.data),p.anexoNome||'-',formatarData(p.dataFechamento),status(p)||'Aberta']),styles:{fontSize:8}});doc.save('relatorio_mensal.pdf')}
+document.addEventListener('input',e=>{if(e.target.id==='empresaCnpj'||e.target.id==='cnpj')e.target.value=maskCNPJ(e.target.value)});
+cnpj.addEventListener('change',preencherEmpresaPorCNPJ); cnpj.addEventListener('blur',preencherEmpresaPorCNPJ); empresa.addEventListener('change',preencherEmpresaPorNome); filtro.addEventListener('keyup',render); pesquisaEmpresa.addEventListener('keyup',renderEmpresas); valor.addEventListener('blur',()=>{valor.value=moeda(parseMoeda(valor.value))});
+window.addEventListener('load',()=>{ const em=localStorage.getItem('usuario_propostas_email')||''; if(em){emailLogin.value=em;} });
+</script>
+</body>
+</html>
