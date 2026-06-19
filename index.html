@@ -8,7 +8,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
-*{box-sizing:border-box} body{font-family:Arial;margin:0;background:#f4f4f4;color:#000}.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:#1f2937;color:#fff;padding:20px;overflow:auto}.sidebar h3{margin-top:15px}.sidebar button{display:block;width:100%;margin:8px 0;padding:11px;background:#1976d2;color:#fff;border:0;border-radius:6px;cursor:pointer}.main{margin-left:240px;padding:25px}.box{background:#fff;padding:20px;border-radius:10px;margin-bottom:18px;overflow:auto}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}input,select,button{padding:9px;font-size:14px}button{background:#1976d2;color:#fff;border:0;border-radius:6px;cursor:pointer}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #ccc;padding:8px;text-align:center;font-size:12px}th{background:#1976d2;color:#fff}.pendente{background:#fff3b0}.sim{background:#b6f0c2}.nao{background:#ffb3b3}.cards{display:flex;gap:15px;flex-wrap:wrap}.card{padding:15px;border-radius:8px;min-width:220px;background:#e3f2fd}.verde{background:#c8e6c9}.laranja{background:#ffe0b2}a{color:#1976d2;font-weight:bold;text-decoration:none}.acoes button{margin:2px;padding:7px 10px}.topo{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}@media(max-width:800px){.sidebar{position:relative;width:100%;height:auto}.main{margin-left:0;padding:10px}}
+*{box-sizing:border-box} body{font-family:Arial;margin:0;background:#f4f4f4;color:#000}.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:#35451F;color:#fff;padding:20px;overflow:auto}.sidebar h3{
+  margin-top:15px;
+  color:#fff;
+  letter-spacing:0.5px;
+}
+
+.sidebar button{margin-top:15px}.sidebar button{display:block;width:100%;margin:8px 0;padding:11px;background:#556B2F;color:#fff;border:0;border-radius:6px;cursor:pointer}.main{margin-left:240px;padding:25px}.box{background:#fff;padding:20px;border-radius:10px;margin-bottom:18px;overflow:auto}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}input,select,button{padding:9px;font-size:14px}button{
+  background:#556B2F;
+  color:#fff;
+  border:0;
+  border-radius:6px;
+  cursor:pointer;
+}
+button:hover{
+  background:#6B8E23;
+}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #ccc;padding:8px;text-align:center;font-size:12px}th{
+  background:#556B2F;
+  color:#fff;
+}.pendente{background:#fff3b0}.sim{background:#b6f0c2}.nao{background:#ffb3b3}.cards{display:flex;gap:15px;flex-wrap:wrap}.card{
+  padding:15px;
+  border-radius:8px;
+  min-width:220px;
+  background:#eef4e4;
+  border-left:5px solid #556B2F;
+}.verde{background:#c8e6c9}.laranja{background:#ffe0b2}a{
+  color:#556B2F;
+  font-weight:bold;
+  text-decoration:none;
+}.acoes button{margin:2px;padding:7px 10px}.topo{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}@media(max-width:800px){.sidebar{position:relative;width:100%;height:auto}.main{margin-left:0;padding:10px}}
 </style>
 </head>
 <body>
@@ -22,7 +50,7 @@
 </div>
 <div class="main">
  <section id="loginBox" class="box">
-  <h2>Login</h2>
+  <h2 style="color:#556B2F">Controle de Propostas</h2>
   <p>Digite o e-mail cadastrado na aba Usuarios.</p>
   <div class="grid">
    <input id="emailLogin" type="email" placeholder="Seu e-mail">
