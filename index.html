@@ -134,19 +134,50 @@ async function api(acao, dados={}){
   try { return JSON.parse(txt); } catch(e) { console.error(txt); throw new Error('Resposta inválida da API'); }
 }
 
-async function fazerLogin(){
+async async function fazerLogin(){
   const email = emailLogin.value.trim().toLowerCase();
-  if(!email){ alert('Digite seu e-mail.'); return; }
+
+  if(!email){
+    alert('Digite seu e-mail.');
+    return;
+  }
+
   msgLogin.textContent='Verificando acesso...';
+
   try{
+
     const r = await api('login', {email});
-    if(!r.ok){ msgLogin.textContent=r.erro||'Acesso negado'; return; }
+
+    if(!r.ok){
+      msgLogin.textContent = r.erro || 'Acesso negado';
+      return;
+    }
+
     usuarioLogado = r.usuario;
-    localStorage.setItem('usuario_propostas_email', email);
-    loginBox.style.display='none'; appBox.style.display='block';
+
+    // Salva email
+    localStorage.setItem(
+      'usuario_propostas_email',
+      email
+    );
+
+    // Salva usuário completo
+    localStorage.setItem(
+      'usuario_propostas',
+      JSON.stringify(r.usuario)
+    );
+
+    loginBox.style.display='none';
+    appBox.style.display='block';
+
     await carregarDados();
+
     mostrarTela('propostas');
-  }catch(e){ msgLogin.textContent='Erro ao conectar com a API: '+e.message; }
+
+  }catch(e){
+    msgLogin.textContent =
+      'Erro ao conectar com a API: ' + e.message;
+  }
 }
 
 async function carregarDados(){
@@ -200,7 +231,23 @@ function exportarExcel(){let dados=itens.map(p=>({Responsavel:p.responsavel,Cont
 function gerarPDFMensal(){let mes=mesPdf.value;if(!mes){alert('Selecione um mês.');return}let filtrados=itens.filter(p=>(p.data||'').startsWith(mes));if(!filtrados.length){alert('Nenhum registro encontrado para este mês.');return}const{jsPDF}=window.jspdf;let doc=new jsPDF({orientation:'landscape'});doc.text('Relatório Mensal de Propostas',14,15);doc.autoTable({startY:25,head:[['Responsável','Contato','Telefone','E-mail','CNPJ','Empresa','Valor','Descrição','Data','Anexo','Data Fechamento','Fechado']],body:filtrados.map(p=>[p.responsavel,p.contato,p.telefone,p.email,p.cnpj,p.empresa,moeda(parseMoeda(p.valor)),p.descricao,formatarData(p.data),p.anexoNome||'-',formatarData(p.dataFechamento),status(p)||'Aberta']),styles:{fontSize:8}});doc.save('relatorio_mensal.pdf')}
 document.addEventListener('input',e=>{if(e.target.id==='empresaCnpj'||e.target.id==='cnpj')e.target.value=maskCNPJ(e.target.value)});
 cnpj.addEventListener('change',preencherEmpresaPorCNPJ); cnpj.addEventListener('blur',preencherEmpresaPorCNPJ); empresa.addEventListener('change',preencherEmpresaPorNome); filtro.addEventListener('keyup',render); pesquisaEmpresa.addEventListener('keyup',renderEmpresas); valor.addEventListener('blur',()=>{valor.value=moeda(parseMoeda(valor.value))});
-window.addEventListener('load',()=>{ const em=localStorage.getItem('usuario_propostas_email')||''; if(em){emailLogin.value=em;} });
+window.addEventListener('load', async () => {
+  const usuarioSalvo = localStorage.getItem('usuario_propostas');
+
+  if (usuarioSalvo) {
+    usuarioLogado = JSON.parse(usuarioSalvo);
+    loginBox.style.display = 'none';
+    appBox.style.display = 'block';
+    await carregarDados();
+    mostrarTela('propostas');
+    return;
+  }
+
+  const em = localStorage.getItem('usuario_propostas_email') || '';
+  if (em) {
+    emailLogin.value = em;
+  }
+});
 </script>
 </body>
 </html>
