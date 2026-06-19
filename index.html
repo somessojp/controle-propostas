@@ -134,7 +134,7 @@ async function api(acao, dados={}){
   try { return JSON.parse(txt); } catch(e) { console.error(txt); throw new Error('Resposta inválida da API'); }
 }
 
-async async function fazerLogin(){
+async function fazerLogin(){
   const email = emailLogin.value.trim().toLowerCase();
 
   if(!email){
