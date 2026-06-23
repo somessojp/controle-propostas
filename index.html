@@ -88,7 +88,11 @@ button:hover{
    <hr>
    <div class="grid">
     <select id="statusProposta"><option value="Enviada">Enviada</option><option>Negociação</option><option>Fechada</option><option>Perdida</option></select>
-    <input id="responsavel" placeholder="Responsável">
+    <select id="responsavel">
+  <option value="">Selecione o responsável</option>
+  <option value="Tassio Borges">Tassio Borges</option>
+  <option value="Tamila Pereira">Tamila Pereira</option>
+</select>
     <input id="cnpj" placeholder="CNPJ">
     <input id="empresa" placeholder="Empresa" list="listaEmpresas">
     <input id="contato" placeholder="Contato">
@@ -154,6 +158,14 @@ async function fazerLogin(){
     }
 
     usuarioLogado = r.usuario;
+    if(String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
+  responsavel.value =
+    usuarioLogado.consultorVinculado ||
+    usuarioLogado.vendedorVinculado ||
+    usuarioLogado.nome;
+
+  responsavel.disabled = true;
+}
 
     // Salva email
     localStorage.setItem(
