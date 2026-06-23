@@ -106,7 +106,15 @@ button:hover{
    </div>
    <br><button id="btnAdicionar" onclick="adicionarProposta()">Adicionar</button>
   </div>
-  <div class="box"><input id="filtro" placeholder="Pesquisar palavras-chave..." style="width:40%"> <button onclick="exportarExcel()">Exportar Excel</button> <input type="month" id="mesPdf"> <button onclick="gerarPDFMensal()">Gerar PDF Mensal</button></div>
+  <div class="box"><input id="filtro" placeholder="Pesquisar palavras-chave..." style="width:35%" oninput="render()">
+
+<select id="filtroResponsavel" onchange="render()">
+  <option value="">Todos os responsáveis</option>
+  <option value="Tassio Borges">Tassio Borges</option>
+  <option value="Tamila Pereira">Tamila Pereira</option>
+</select>
+
+<button onclick="exportarExcel()">Exportar Excel</button> <input type="month" id="mesPdf"> <button onclick="gerarPDFMensal()">Gerar PDF Mensal</button></div>
   <div class="box"><h3>Propostas em Aberto</h3><p>Ao clicar em <b>Sim</b>, vai para Propostas Fechadas. Ao clicar em <b>Não</b>, vai para Propostas Não Fechadas.</p><table><thead id="headPrincipal"></thead><tbody id="tb"></tbody></table></div>
   <div class="box"><div class="cards">
    <div class="card"><b>Total Geral das Propostas Enviadas</b><br><span id="totalGeral">R$ 0,00</span><hr><b>Quantidade de Propostas Enviadas</b><br><span id="totalEnviadas">0</span></div>
@@ -234,6 +242,15 @@ if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
     const responsavel = String(p.responsavel || '').toLowerCase().trim();
     return responsavel === meuNome || responsavel === meuVinculo;
   });
+}
+  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() === 'ADM'){
+  const filtroResp = String(document.getElementById('filtroResponsavel')?.value || '').toLowerCase().trim();
+
+  if(filtroResp){
+    visiveis = visiveis.filter(p =>
+      String(p.responsavel || '').toLowerCase().trim() === filtroResp
+    );
+  }
 }
  let total=0, fechado=0, nao=0, qtdFech=0;
  visiveis.forEach((p)=>{let v=parseMoeda(p.valor); total+=v; let st=status(p); if(st==='Sim'){fechado+=v;qtdFech++} if(st==='Não')nao+=v;});
