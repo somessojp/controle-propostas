@@ -223,7 +223,12 @@ function render(){
  let visiveis = itens;
 if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
   const meuNome = String(usuarioLogado.nome || '').toLowerCase().trim();
-  const meuVinculo = String(usuarioLogado.consultorVinculado || usuarioLogado.vendedorVinculado || usuarioLogado.nome || '').toLowerCase().trim();
+ const meuVinculo = String(
+  usuarioLogado.consultorVinculado ||
+  usuarioLogado.vendedorVinculado ||
+  usuarioLogado.nome ||
+  ''
+).toLowerCase().trim();
 
   visiveis = itens.filter(p => {
     const responsavel = String(p.responsavel || '').toLowerCase().trim();
