@@ -209,14 +209,73 @@ function render(){
  let termo=(document.getElementById('filtro')?.value||'').toLowerCase();
  tb.innerHTML=''; tbFechadas.innerHTML=''; tbNaoFechadas.innerHTML='';
  let visiveis = itens;
- if(usuarioLogado && String(usuarioLogado.perfil).toUpperCase()!=='ADM') visiveis = itens.filter(p=>String(p.responsavel||'').toLowerCase()===String(usuarioLogado.nome||'').toLowerCase() || String(p.email||'').toLowerCase()===String(usuarioLogado.email||'').toLowerCase());
+if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
+  const meuNome = String(usuarioLogado.nome || '').toLowerCase().trim();
+  const meuVinculo = String(usuarioLogado.consultorVinculado || usuarioLogado.vendedorVinculado || usuarioLogado.nome || '').toLowerCase().trim();
+
+  visiveis = itens.filter(p => {
+    const responsavel = String(p.responsavel || '').toLowerCase().trim();
+    return responsavel === meuNome || responsavel === meuVinculo;
+  });
+}
  let total=0, fechado=0, nao=0, qtdFech=0;
  visiveis.forEach((p)=>{let v=parseMoeda(p.valor); total+=v; let st=status(p); if(st==='Sim'){fechado+=v;qtdFech++} if(st==='Não')nao+=v;});
  visiveis.forEach((p)=>{let idx=itens.findIndex(x=>x.id===p.id); let texto=Object.values(p).join(' ').toLowerCase(); if(termo&&!texto.includes(termo))return; let st=status(p); if(st==='Sim') tbFechadas.innerHTML+=linha(p,idx); else if(st==='Não') tbNaoFechadas.innerHTML+=linha(p,idx); else tb.innerHTML+=linha(p,idx);});
  totalGeral.textContent=moeda(total); valorFechado.textContent=moeda(fechado); valorNaoFechado.textContent=moeda(nao); totalEnviadas.textContent=visiveis.length; totalFechado.textContent=qtdFech; percentualConversao.textContent=visiveis.length?((qtdFech/visiveis.length)*100).toFixed(1)+'%':'0%'; dashTotal.textContent=moeda(total); dashFechado.textContent=moeda(fechado); dashConv.textContent=percentualConversao.textContent; renderEmpresas(); }
 async function setFechado(idx,resposta){ if(!itens[idx])return; itens[idx].fechado=resposta; if(resposta==='Sim'&&!itens[idx].dataFechamento) itens[idx].dataFechamento=hojeISO(); if(resposta==='Não') itens[idx].dataFechamento=''; await salvarPropostaServidor(itens[idx]); await carregarDados(); mostrarTela(resposta==='Sim'?'fechadas':'naoFechadas'); }
 function fileToBase64(file){ return new Promise((resolve,reject)=>{ if(!file) return resolve(''); let r=new FileReader(); r.onload=e=>resolve(e.target.result); r.onerror=reject; r.readAsDataURL(file); }); }
-async function adicionarProposta(){let file=anexo.files[0]; let obj={id:editandoId||'',status:statusProposta.value,responsavel:responsavel.value.trim(),cnpj:cnpj.value.trim(),empresa:empresa.value.trim(),contato:contato.value.trim(),telefone:telefone.value.trim(),email:email.value.trim(),valor:parseMoeda(valor.value),descricao:descricao.value.trim(),data:data.value,anexo:'',anexoNome:file?file.name:'',dataFechamento:dataFechamento.value,fechado:''}; for(let k of ['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data']){if(!obj[k]){alert('Preencha todos os campos da proposta.');return}} btnAdicionar.disabled=true; btnAdicionar.textContent='Salvando...'; try{ const base64=await fileToBase64(file); await salvarPropostaServidor(obj,base64); editandoId=null; limparProposta(); await carregarDados(); alert('Proposta salva com sucesso.'); }catch(e){alert('Erro ao salvar: '+e.message)} finally{btnAdicionar.disabled=false; btnAdicionar.textContent='Adicionar';} }
+async function adicionarProposta(){
+  let file = anexo.files[0];
+
+  const responsavelFinal =
+    String(usuarioLogado.perfil || '').toUpperCase() === 'ADM'
+      ? responsavel.value.trim()
+      : (usuarioLogado.consultorVinculado || usuarioLogado.vendedorVinculado || usuarioLogado.nome);
+
+  let obj = {
+    id: editandoId || '',
+    status: statusProposta.value,
+    responsavel: responsavelFinal,
+    cnpj: cnpj.value.trim(),
+    empresa: empresa.value.trim(),
+    contato: contato.value.trim(),
+    telefone: telefone.value.trim(),
+    email: email.value.trim(),
+    valor: parseMoeda(valor.value),
+    descricao: descricao.value.trim(),
+    data: data.value,
+    anexo: '',
+    anexoNome: file ? file.name : '',
+    dataFechamento: dataFechamento.value,
+    fechado: ''
+  };
+
+  for (let k of ['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data']) {
+    if (!obj[k]) {
+      alert('Preencha todos os campos da proposta.');
+      return;
+    }
+  }
+
+  btnAdicionar.disabled = true;
+  btnAdicionar.textContent = 'Salvando...';
+
+  try {
+    const base64 = await fileToBase64(file);
+    await salvarPropostaServidor(obj, base64);
+
+    editandoId = null;
+    limparProposta();
+    await carregarDados();
+
+    alert('Proposta salva com sucesso.');
+  } catch(e) {
+    alert('Erro ao salvar: ' + e.message);
+  } finally {
+    btnAdicionar.disabled = false;
+    btnAdicionar.textContent = 'Adicionar';
+  }
+}
 async function salvarPropostaServidor(p,base64=''){ return api('salvarProposta',{id:p.id,status:p.status,responsavel:p.responsavel,cnpj:p.cnpj,empresa:p.empresa,contato:p.contato,telefone:p.telefone,email:p.email,valor:p.valor,descricao:p.descricao,dataEnvio:p.data,anexoBase64:base64,nomeAnexo:p.anexoNome,linkAnexo:p.anexo,dataFechamento:p.dataFechamento,fechado:p.fechado}); }
 function limparProposta(){['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data','dataFechamento','anexo'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''})}
 function editar(idx){let p=itens[idx]; if(!p)return; editandoId=p.id; responsavel.value=p.responsavel||''; cnpj.value=p.cnpj||''; empresa.value=p.empresa||''; contato.value=p.contato||''; telefone.value=p.telefone||''; email.value=p.email||''; valor.value=moeda(parseMoeda(p.valor)); descricao.value=p.descricao||''; data.value=p.data||''; dataFechamento.value=p.dataFechamento||''; btnAdicionar.textContent='Salvar Alteração'; mostrarTela('propostas');}
