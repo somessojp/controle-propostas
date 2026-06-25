@@ -327,7 +327,7 @@ async function adicionarProposta(){
     fechado: ''
   };
 
-  for (let k of ['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data']) {
+  for (let k of ['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','dataVencimento']) {
     if (!obj[k]) {
       alert('Preencha todos os campos da proposta.');
       return;
