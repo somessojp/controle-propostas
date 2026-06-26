@@ -187,8 +187,15 @@ async function api(acao, dados={}){
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({acao, ...dados})
   });
+
   const txt = await resp.text();
-  try { return JSON.parse(txt); } catch(e) { console.error(txt); throw new Error('Resposta inválida da API'); }
+
+  try {
+    return JSON.parse(txt);
+  } catch(e) {
+    console.error('Resposta inválida da API:', txt);
+    throw new Error('Resposta inválida da API');
+  }
 }
 
 async function fazerLogin(){
@@ -242,14 +249,23 @@ async function fazerLogin(){
 function getResponsavelUsuario(){
   if(!usuarioLogado) return '';
 
-  return String(
+  const vinculo = String(
     usuarioLogado.consultorVinculado ||
     usuarioLogado.vendedorVinculado ||
     usuarioLogado.VendedorVinculado ||
     usuarioLogado.vendedorvinculado ||
-    usuarioLogado.nome ||
     ''
   ).trim();
+
+  if(vinculo) return vinculo;
+
+  const nome = String(usuarioLogado.nome || '').trim();
+
+  if(nome.toLowerCase() === 'tamila' || nome.toLowerCase() === 'tamilla'){
+    return 'Tamilla Pereira';
+  }
+
+  return nome;
 }
 
 function isAdm(){
@@ -532,21 +548,33 @@ document.addEventListener('click', function(e){
 });
 
 window.addEventListener('load', async () => {
-  const usuarioSalvo = localStorage.getItem('usuario_propostas');
-
-  if (usuarioSalvo) {
-    usuarioLogado = JSON.parse(usuarioSalvo);
-    aplicarPermissoesUsuario();
-    loginBox.style.display = 'none';
-    appBox.style.display = 'block';
-    await carregarDados();
-    mostrarTela('propostas');
-    return;
-  }
-
   const em = localStorage.getItem('usuario_propostas_email') || '';
+
   if (em) {
     emailLogin.value = em;
+
+    try{
+      const r = await api('login', {email: em});
+
+      if(r.ok){
+        usuarioLogado = r.usuario;
+        localStorage.setItem('usuario_propostas', JSON.stringify(r.usuario));
+
+        aplicarPermissoesUsuario();
+
+        loginBox.style.display = 'none';
+        appBox.style.display = 'block';
+
+        await carregarDados();
+        mostrarTela('propostas');
+        return;
+      }
+
+      localStorage.removeItem('usuario_propostas');
+      localStorage.removeItem('usuario_propostas_email');
+    }catch(e){
+      console.warn('Não foi possível restaurar login automaticamente:', e.message);
+    }
   }
 });
 </script>
