@@ -361,11 +361,16 @@ function formatarAnexos(link, nome){
   if(!link) return '-';
 
   const links = String(link)
-    .split(/\n|\s*;\s*/)
+    .replace(/\r/g, '')
+    .split('\n')
+    .join(';')
+    .split(';')
+    .map(x => x.trim())
     .filter(Boolean);
 
   const nomes = String(nome || '')
-    .split(/,\s*/)
+    .split(',')
+    .map(x => x.trim())
     .filter(Boolean);
 
   return links.map((l,i)=>{
