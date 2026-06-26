@@ -328,9 +328,19 @@ async function adicionarProposta(){
   let file = anexo.files[0];
 
   const responsavelFinal =
-    String(usuarioLogado.perfil || '').toUpperCase() === 'ADM'
-      ? responsavel.value.trim()
-      : (usuarioLogado.consultorVinculado || usuarioLogado.vendedorVinculado || usuarioLogado.nome);
+  String(usuarioLogado.perfil || '').toUpperCase() === 'ADM'
+    ? responsavel.value.trim()
+    : String(
+        usuarioLogado.consultorVinculado ||
+        usuarioLogado.vendedorVinculado ||
+        usuarioLogado.nome ||
+        ''
+      ).trim();
+
+if(!responsavelFinal){
+  alert('Usuário consultor sem responsável vinculado. Verifique a aba Usuarios.');
+  return;
+}
 
   let obj = {
     id: editandoId || '',
