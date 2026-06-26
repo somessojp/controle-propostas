@@ -120,7 +120,7 @@ button:hover{
     <input id="valor" placeholder="Valor">
     <input id="descricao" placeholder="Descrição">
     <input id="data" type="date">
-    <input id="anexo" type="file" multiple>
+    <input id="anexo" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
     <input id="dataFechamento" type="date" title="Data de Fechamento">
    </div>
    <br><button id="btnAdicionar" onclick="adicionarProposta()">Adicionar</button>
@@ -187,12 +187,9 @@ async function api(acao, dados={}){
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({acao, ...dados})
   });
-
   const txt = await resp.text();
-
-  try {
-    return JSON.parse(txt);
-  } catch(e) {
+  try { return JSON.parse(txt); }
+  catch(e) {
     console.error('Resposta inválida da API:', txt);
     throw new Error('Resposta inválida da API');
   }
@@ -248,7 +245,6 @@ async function fazerLogin(){
 
 function getResponsavelUsuario(){
   if(!usuarioLogado) return '';
-
   const vinculo = String(
     usuarioLogado.consultorVinculado ||
     usuarioLogado.vendedorVinculado ||
@@ -256,15 +252,11 @@ function getResponsavelUsuario(){
     usuarioLogado.vendedorvinculado ||
     ''
   ).trim();
-
   if(vinculo) return vinculo;
-
   const nome = String(usuarioLogado.nome || '').trim();
-
   if(nome.toLowerCase() === 'tamila' || nome.toLowerCase() === 'tamilla'){
     return 'Tamilla Pereira';
   }
-
   return nome;
 }
 
@@ -274,19 +266,13 @@ function isAdm(){
 
 function aplicarPermissoesUsuario(){
   if(!usuarioLogado) return;
-
   const respUsuario = getResponsavelUsuario();
-
   if(!isAdm()){
     responsavel.innerHTML = `<option value="${respUsuario}">${respUsuario}</option>`;
     responsavel.value = respUsuario;
     responsavel.disabled = true;
-
     const filtroResp = document.getElementById('filtroResponsavel');
-    if(filtroResp){
-      filtroResp.style.display = 'none';
-      filtroResp.value = '';
-    }
+    if(filtroResp){ filtroResp.style.display = 'none'; filtroResp.value = ''; }
   } else {
     responsavel.innerHTML = `
       <option value="">Selecione o responsável</option>
@@ -294,11 +280,8 @@ function aplicarPermissoesUsuario(){
       <option value="Tamilla Pereira">Tamilla Pereira</option>
     `;
     responsavel.disabled = false;
-
     const filtroResp = document.getElementById('filtroResponsavel');
-    if(filtroResp){
-      filtroResp.style.display = '';
-    }
+    if(filtroResp){ filtroResp.style.display = ''; }
   }
 }
 
@@ -549,27 +532,20 @@ document.addEventListener('click', function(e){
 
 window.addEventListener('load', async () => {
   const em = localStorage.getItem('usuario_propostas_email') || '';
-
   if (em) {
     emailLogin.value = em;
-
     try{
       const r = await api('login', {email: em});
-
       if(r.ok){
         usuarioLogado = r.usuario;
         localStorage.setItem('usuario_propostas', JSON.stringify(r.usuario));
-
         aplicarPermissoesUsuario();
-
         loginBox.style.display = 'none';
         appBox.style.display = 'block';
-
         await carregarDados();
         mostrarTela('propostas');
         return;
       }
-
       localStorage.removeItem('usuario_propostas');
       localStorage.removeItem('usuario_propostas_email');
     }catch(e){
