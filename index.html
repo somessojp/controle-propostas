@@ -178,6 +178,8 @@ let itens = [];
 let empresas = [];
 let usuarioLogado = null;
 let editandoId = null;
+let editandoFechado = '';
+let editandoStatus = '';
 
 async function api(acao, dados={}){
   const resp = await fetch(API_URL, {
@@ -209,14 +211,7 @@ async function fazerLogin(){
     }
 
     usuarioLogado = r.usuario;
-    if(String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
-  responsavel.value =
-    usuarioLogado.consultorVinculado ||
-    usuarioLogado.vendedorVinculado ||
-    usuarioLogado.nome;
-
-  responsavel.disabled = true;
-}
+    aplicarPermissoesUsuario();
 
     // Salva email
     localStorage.setItem(
@@ -243,11 +238,39 @@ async function fazerLogin(){
   }
 }
 
+
+function aplicarPermissoesUsuario(){
+  if(!usuarioLogado) return;
+
+  if(String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
+    responsavel.value =
+      usuarioLogado.consultorVinculado ||
+      usuarioLogado.vendedorVinculado ||
+      usuarioLogado.nome ||
+      '';
+    responsavel.disabled = true;
+
+    const filtroResp = document.getElementById('filtroResponsavel');
+    if(filtroResp){
+      filtroResp.style.display = 'none';
+      filtroResp.value = '';
+    }
+  } else {
+    responsavel.disabled = false;
+
+    const filtroResp = document.getElementById('filtroResponsavel');
+    if(filtroResp){
+      filtroResp.style.display = '';
+    }
+  }
+}
+
 async function carregarDados(){
   const r = await api('listar');
   if(!r.ok){ alert('Erro ao carregar dados.'); return; }
   itens = (r.propostas||[]).map(sheetToProposta);
   empresas = (r.empresas||[]).map(sheetToEmpresa);
+  aplicarPermissoesUsuario();
   render();
 }
 
@@ -311,7 +334,7 @@ async function adicionarProposta(){
 
   let obj = {
     id: editandoId || '',
-    status: statusProposta.value,
+    status: editandoId ? (editandoStatus || statusProposta.value) : statusProposta.value,
     responsavel: responsavelFinal,
     cnpj: cnpj.value.trim(),
     empresa: empresa.value.trim(),
@@ -324,12 +347,12 @@ async function adicionarProposta(){
     anexo: '',
     anexoNome: file ? file.name : '',
     dataFechamento: dataFechamento.value,
-    fechado: ''
+    fechado: editandoId ? editandoFechado : ''
   };
 
-  for (let k of ['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','dataVencimento']) {
+  for (let k of ['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data']) {
     if (!obj[k]) {
-      alert('Preencha todos os campos da proposta.');
+      alert('Campo obrigatório não preenchido: ' + k);
       return;
     }
   }
@@ -342,7 +365,10 @@ async function adicionarProposta(){
     await salvarPropostaServidor(obj, base64);
 
     editandoId = null;
+    editandoFechado = '';
+    editandoStatus = '';
     limparProposta();
+    btnAdicionar.textContent = 'Adicionar';
     await carregarDados();
 
     alert('Proposta salva com sucesso.');
@@ -354,8 +380,47 @@ async function adicionarProposta(){
   }
 }
 async function salvarPropostaServidor(p,base64=''){ return api('salvarProposta',{id:p.id,status:p.status,responsavel:p.responsavel,cnpj:p.cnpj,empresa:p.empresa,contato:p.contato,telefone:p.telefone,email:p.email,valor:p.valor,descricao:p.descricao,dataEnvio:p.data,anexoBase64:base64,nomeAnexo:p.anexoNome,linkAnexo:p.anexo,dataFechamento:p.dataFechamento,fechado:p.fechado}); }
-function limparProposta(){['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data','dataFechamento','anexo'].forEach(id=>{let e=document.getElementById(id);if(e)e.value=''})}
-function editar(idx){let p=itens[idx]; if(!p)return; editandoId=p.id; responsavel.value=p.responsavel||''; cnpj.value=p.cnpj||''; empresa.value=p.empresa||''; contato.value=p.contato||''; telefone.value=p.telefone||''; email.value=p.email||''; valor.value=moeda(parseMoeda(p.valor)); descricao.value=p.descricao||''; data.value=p.data||''; dataFechamento.value=p.dataFechamento||''; btnAdicionar.textContent='Salvar Alteração'; mostrarTela('propostas');}
+function limparProposta(){
+  ['responsavel','cnpj','empresa','contato','telefone','email','valor','descricao','data','dataFechamento','anexo'].forEach(id=>{
+    let e=document.getElementById(id);
+    if(e)e.value='';
+  });
+
+  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
+    responsavel.value =
+      usuarioLogado.consultorVinculado ||
+      usuarioLogado.vendedorVinculado ||
+      usuarioLogado.nome ||
+      '';
+    responsavel.disabled = true;
+  }
+}
+function editar(idx){
+  let p=itens[idx];
+  if(!p)return;
+
+  editandoId=p.id;
+  editandoFechado=p.fechado||'';
+  editandoStatus=p.status||'';
+
+  responsavel.value=p.responsavel||'';
+  cnpj.value=p.cnpj||'';
+  empresa.value=p.empresa||'';
+  contato.value=p.contato||'';
+  telefone.value=p.telefone||'';
+  email.value=p.email||'';
+  valor.value=moeda(parseMoeda(p.valor));
+  descricao.value=p.descricao||'';
+  data.value=p.data||'';
+  dataFechamento.value=p.dataFechamento||'';
+
+  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
+    responsavel.disabled = true;
+  }
+
+  btnAdicionar.textContent='Salvar Alteração';
+  mostrarTela('propostas');
+}
 async function excluir(idx){if(confirm('Deseja excluir?')){ await api('excluirProposta',{id:itens[idx].id}); await carregarDados(); }}
 function abrirCadastroEmpresas(){modalEmpresas.style.display='block'}
 function fecharCadastroEmpresas(){modalEmpresas.style.display='none'}
@@ -405,8 +470,46 @@ function editarEmpresa(i){let e=empresas[i]; empresaCnpj.value=e.cnpj;empresaNom
 async function excluirEmpresa(i){if(confirm('Deseja excluir empresa?')){await api('excluirEmpresa',{cnpj:empresas[i].cnpj}); await carregarDados();}}
 function preencherEmpresaPorCNPJ(){let c=maskCNPJ(cnpj.value);cnpj.value=c;let e=empresas.find(x=>x.cnpj===c); if(e){empresa.value=e.nome||'';contato.value=e.contato||'';telefone.value=e.telefone||'';email.value=e.email||''}}
 function preencherEmpresaPorNome(){let e=empresas.find(x=>x.nome===empresa.value); if(e){cnpj.value=e.cnpj||'';contato.value=e.contato||'';telefone.value=e.telefone||'';email.value=e.email||''}}
-function exportarExcel(){let dados=itens.map(p=>({Responsavel:p.responsavel,Contato:p.contato,Telefone:p.telefone,Email:p.email,CNPJ:p.cnpj,Empresa:p.empresa,Valor:moeda(parseMoeda(p.valor)),Descricao:p.descricao,Data:formatarData(p.data),Anexo:p.anexoNome||'-',DataFechamento:formatarData(p.dataFechamento),Fechado:status(p)||'Aberta'}));let ws=XLSX.utils.json_to_sheet(dados);let wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Propostas');XLSX.writeFile(wb,'propostas.xlsx')}
-function gerarPDFMensal(){let mes=mesPdf.value;if(!mes){alert('Selecione um mês.');return}let filtrados=itens.filter(p=>(p.data||'').startsWith(mes));if(!filtrados.length){alert('Nenhum registro encontrado para este mês.');return}const{jsPDF}=window.jspdf;let doc=new jsPDF({orientation:'landscape'});doc.text('Relatório Mensal de Propostas',14,15);doc.autoTable({startY:25,head:[['Responsável','Contato','Telefone','E-mail','CNPJ','Empresa','Valor','Descrição','Data','Anexo','Data Fechamento','Fechado']],body:filtrados.map(p=>[p.responsavel,p.contato,p.telefone,p.email,p.cnpj,p.empresa,moeda(parseMoeda(p.valor)),p.descricao,formatarData(p.data),p.anexoNome||'-',formatarData(p.dataFechamento),status(p)||'Aberta']),styles:{fontSize:8}});doc.save('relatorio_mensal.pdf')}
+
+function propostasVisiveis(){
+  let lista = itens;
+
+  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
+    const meuNome = String(usuarioLogado.nome || '').toLowerCase().trim();
+    const meuVinculo = String(
+      usuarioLogado.consultorVinculado ||
+      usuarioLogado.vendedorVinculado ||
+      usuarioLogado.nome ||
+      ''
+    ).toLowerCase().trim();
+
+    lista = lista.filter(p => {
+      const responsavel = String(p.responsavel || '').toLowerCase().trim();
+      return responsavel === meuNome || responsavel === meuVinculo;
+    });
+  }
+
+  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() === 'ADM'){
+    const filtroResp = String(document.getElementById('filtroResponsavel')?.value || '').toLowerCase().trim();
+
+    if(filtroResp){
+      lista = lista.filter(p =>
+        String(p.responsavel || '').toLowerCase().trim() === filtroResp
+      );
+    }
+  }
+
+  const termo = String(document.getElementById('filtro')?.value || '').toLowerCase().trim();
+
+  if(termo){
+    lista = lista.filter(p => Object.values(p).join(' ').toLowerCase().includes(termo));
+  }
+
+  return lista;
+}
+
+function exportarExcel(){let dados=propostasVisiveis().map(p=>({Responsavel:p.responsavel,Contato:p.contato,Telefone:p.telefone,Email:p.email,CNPJ:p.cnpj,Empresa:p.empresa,Valor:moeda(parseMoeda(p.valor)),Descricao:p.descricao,Data:formatarData(p.data),Anexo:p.anexoNome||'-',DataFechamento:formatarData(p.dataFechamento),Fechado:status(p)||'Aberta'}));let ws=XLSX.utils.json_to_sheet(dados);let wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Propostas');XLSX.writeFile(wb,'propostas.xlsx')}
+function gerarPDFMensal(){let mes=mesPdf.value;if(!mes){alert('Selecione um mês.');return}let filtrados=propostasVisiveis().filter(p=>(p.data||'').startsWith(mes));if(!filtrados.length){alert('Nenhum registro encontrado para este mês.');return}const{jsPDF}=window.jspdf;let doc=new jsPDF({orientation:'landscape'});doc.text('Relatório Mensal de Propostas',14,15);doc.autoTable({startY:25,head:[['Responsável','Contato','Telefone','E-mail','CNPJ','Empresa','Valor','Descrição','Data','Anexo','Data Fechamento','Fechado']],body:filtrados.map(p=>[p.responsavel,p.contato,p.telefone,p.email,p.cnpj,p.empresa,moeda(parseMoeda(p.valor)),p.descricao,formatarData(p.data),p.anexoNome||'-',formatarData(p.dataFechamento),status(p)||'Aberta']),styles:{fontSize:8}});doc.save('relatorio_mensal.pdf')}
 document.addEventListener('input',e=>{if(e.target.id==='empresaCnpj'||e.target.id==='cnpj')e.target.value=maskCNPJ(e.target.value)});
 cnpj.addEventListener('change',preencherEmpresaPorCNPJ); cnpj.addEventListener('blur',preencherEmpresaPorCNPJ); empresa.addEventListener('change',preencherEmpresaPorNome); filtro.addEventListener('keyup',render); pesquisaEmpresa.addEventListener('keyup',renderEmpresas); valor.addEventListener('blur',()=>{valor.value=moeda(parseMoeda(valor.value))});
 
@@ -421,6 +524,7 @@ window.addEventListener('load', async () => {
 
   if (usuarioSalvo) {
     usuarioLogado = JSON.parse(usuarioSalvo);
+    aplicarPermissoesUsuario();
     loginBox.style.display = 'none';
     appBox.style.display = 'block';
     await carregarDados();
