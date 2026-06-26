@@ -239,24 +239,30 @@ async function fazerLogin(){
 }
 
 
-function aplicarPermissoesUsuario(){
-  if(!usuarioLogado) return;
+function getResponsavelUsuario(){
+  if(!usuarioLogado) return '';
 
-  const perfil = String(usuarioLogado.perfil || '').toUpperCase().trim();
-
-  const respUsuario = String(
+  return String(
     usuarioLogado.consultorVinculado ||
     usuarioLogado.vendedorVinculado ||
     usuarioLogado.VendedorVinculado ||
+    usuarioLogado.vendedorvinculado ||
     usuarioLogado.nome ||
     ''
   ).trim();
+}
 
-  if(perfil !== 'ADM'){
-    responsavel.innerHTML = `
-      <option value="${respUsuario}">${respUsuario}</option>
-    `;
+function isAdm(){
+  return String(usuarioLogado?.perfil || '').toUpperCase().trim() === 'ADM';
+}
 
+function aplicarPermissoesUsuario(){
+  if(!usuarioLogado) return;
+
+  const respUsuario = getResponsavelUsuario();
+
+  if(!isAdm()){
+    responsavel.innerHTML = `<option value="${respUsuario}">${respUsuario}</option>`;
     responsavel.value = respUsuario;
     responsavel.disabled = true;
 
@@ -266,15 +272,11 @@ function aplicarPermissoesUsuario(){
       filtroResp.value = '';
     }
   } else {
-    responsavel.disabled = false;
-
-    const filtroResp = document.getElementById('filtroResponsavel');
-    if(filtroResp){
-      filtroResp.style.display = '';
-    }
-  }
-}
-  } else {
+    responsavel.innerHTML = `
+      <option value="">Selecione o responsável</option>
+      <option value="Tassio Borges">Tassio Borges</option>
+      <option value="Tamilla Pereira">Tamilla Pereira</option>
+    `;
     responsavel.disabled = false;
 
     const filtroResp = document.getElementById('filtroResponsavel');
@@ -314,21 +316,16 @@ function render(){
  let termo=(document.getElementById('filtro')?.value||'').toLowerCase();
  tb.innerHTML=''; tbFechadas.innerHTML=''; tbNaoFechadas.innerHTML='';
  let visiveis = itens;
-if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
+if(usuarioLogado && !isAdm()){
   const meuNome = String(usuarioLogado.nome || '').toLowerCase().trim();
- const meuVinculo = String(
-  usuarioLogado.consultorVinculado ||
-  usuarioLogado.vendedorVinculado ||
-  usuarioLogado.nome ||
-  ''
-).toLowerCase().trim();
+  const meuVinculo = String(getResponsavelUsuario()).toLowerCase().trim();
 
   visiveis = itens.filter(p => {
     const responsavel = String(p.responsavel || '').toLowerCase().trim();
     return responsavel === meuNome || responsavel === meuVinculo;
   });
 }
-  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() === 'ADM'){
+  if(usuarioLogado && isAdm()){
   const filtroResp = String(document.getElementById('filtroResponsavel')?.value || '').toLowerCase().trim();
 
   if(filtroResp){
@@ -347,14 +344,9 @@ async function adicionarProposta(){
   let file = anexo.files[0];
 
   const responsavelFinal =
-  String(usuarioLogado.perfil || '').toUpperCase() === 'ADM'
-    ? responsavel.value.trim()
-    : String(
-        usuarioLogado.consultorVinculado ||
-        usuarioLogado.vendedorVinculado ||
-        usuarioLogado.nome ||
-        ''
-      ).trim();
+    isAdm()
+      ? responsavel.value.trim()
+      : getResponsavelUsuario();
 
 if(!responsavelFinal){
   alert('Usuário consultor sem responsável vinculado. Verifique a aba Usuarios.');
@@ -415,12 +407,8 @@ function limparProposta(){
     if(e)e.value='';
   });
 
-  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
-    responsavel.value =
-      usuarioLogado.consultorVinculado ||
-      usuarioLogado.vendedorVinculado ||
-      usuarioLogado.nome ||
-      '';
+  if(usuarioLogado && !isAdm()){
+    responsavel.value = getResponsavelUsuario();
     responsavel.disabled = true;
   }
 }
@@ -503,14 +491,9 @@ function preencherEmpresaPorNome(){let e=empresas.find(x=>x.nome===empresa.value
 function propostasVisiveis(){
   let lista = itens;
 
-  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
+  if(usuarioLogado && !isAdm()){
     const meuNome = String(usuarioLogado.nome || '').toLowerCase().trim();
-    const meuVinculo = String(
-      usuarioLogado.consultorVinculado ||
-      usuarioLogado.vendedorVinculado ||
-      usuarioLogado.nome ||
-      ''
-    ).toLowerCase().trim();
+    const meuVinculo = String(getResponsavelUsuario()).toLowerCase().trim();
 
     lista = lista.filter(p => {
       const responsavel = String(p.responsavel || '').toLowerCase().trim();
@@ -518,7 +501,7 @@ function propostasVisiveis(){
     });
   }
 
-  if(usuarioLogado && String(usuarioLogado.perfil || '').toUpperCase() === 'ADM'){
+  if(usuarioLogado && isAdm()){
     const filtroResp = String(document.getElementById('filtroResponsavel')?.value || '').toLowerCase().trim();
 
     if(filtroResp){
