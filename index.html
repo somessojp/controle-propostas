@@ -242,12 +242,22 @@ async function fazerLogin(){
 function aplicarPermissoesUsuario(){
   if(!usuarioLogado) return;
 
-  if(String(usuarioLogado.perfil || '').toUpperCase() !== 'ADM'){
-    responsavel.value =
-      usuarioLogado.consultorVinculado ||
-      usuarioLogado.vendedorVinculado ||
-      usuarioLogado.nome ||
-      '';
+  const perfil = String(usuarioLogado.perfil || '').toUpperCase().trim();
+
+  const respUsuario = String(
+    usuarioLogado.consultorVinculado ||
+    usuarioLogado.vendedorVinculado ||
+    usuarioLogado.VendedorVinculado ||
+    usuarioLogado.nome ||
+    ''
+  ).trim();
+
+  if(perfil !== 'ADM'){
+    responsavel.innerHTML = `
+      <option value="${respUsuario}">${respUsuario}</option>
+    `;
+
+    responsavel.value = respUsuario;
     responsavel.disabled = true;
 
     const filtroResp = document.getElementById('filtroResponsavel');
@@ -255,6 +265,15 @@ function aplicarPermissoesUsuario(){
       filtroResp.style.display = 'none';
       filtroResp.value = '';
     }
+  } else {
+    responsavel.disabled = false;
+
+    const filtroResp = document.getElementById('filtroResponsavel');
+    if(filtroResp){
+      filtroResp.style.display = '';
+    }
+  }
+}
   } else {
     responsavel.disabled = false;
 
