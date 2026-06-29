@@ -266,22 +266,39 @@ function isAdm(){
 
 function aplicarPermissoesUsuario(){
   if(!usuarioLogado) return;
+
   const respUsuario = getResponsavelUsuario();
+  const filtroResp = document.getElementById('filtroResponsavel');
+
   if(!isAdm()){
     responsavel.innerHTML = `<option value="${respUsuario}">${respUsuario}</option>`;
     responsavel.value = respUsuario;
     responsavel.disabled = true;
-    const filtroResp = document.getElementById('filtroResponsavel');
-    function aplicarPermissoesUsuario()
-  } else {
-    responsavel.innerHTML = `
-      <option value="">Selecione o responsável</option>
+
+    if(filtroResp){
+      filtroResp.style.display = 'none';
+      filtroResp.value = '';
+    }
+
+    return;
+  }
+
+  responsavel.innerHTML = `
+    <option value="">Selecione o responsável</option>
+    <option value="Tassio Borges">Tassio Borges</option>
+    <option value="Tamilla Pereira">Tamilla Pereira</option>
+  `;
+
+  responsavel.disabled = false;
+
+  if(filtroResp){
+    filtroResp.innerHTML = `
+      <option value="">Todos os responsáveis</option>
       <option value="Tassio Borges">Tassio Borges</option>
       <option value="Tamilla Pereira">Tamilla Pereira</option>
     `;
-    responsavel.disabled = false;
-    const filtroResp = document.getElementById('filtroResponsavel');
-    if(filtroResp){ filtroResp.style.display = ''; }
+    filtroResp.value = '';
+    filtroResp.style.display = '';
   }
 }
 
